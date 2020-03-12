@@ -81,9 +81,10 @@ func EletaTimestampToTimestamp(s string) *tspb.Timestamp {
 			newTimestamp, err = time.Parse(importLayoutTimezone, s)
 			if err != nil {
 				fmt.Println("Not able to parse time:", err)
+				return ToTimestamp(time.Time{})
 			}
+			// log.Debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>> ", newTimestamp, " And the Timestamp: ", ToTimestamp(newTimestamp))
 		}
 	}
-	// log.Debug(newTimestamp, " And the Timestamp: ", ToTimestamp(newTimestamp))
 	return ToTimestamp(newTimestamp)
 }
