@@ -66,6 +66,7 @@ func EletaDateToTimestamp(s string) *tspb.Timestamp {
 }
 
 //01-APR-19 03.12.00.000000000 PM +02:00
+//01-APR-19 03.12.00.000000000 PM GMT
 //01-APR-19 03.12.00 PM +02:00
 func EletaTimestampToTimestamp(s string) *tspb.Timestamp {
 	importLayout := "02-Jan-06 03.04.05.000000000 PM -07:00"
@@ -73,10 +74,14 @@ func EletaTimestampToTimestamp(s string) *tspb.Timestamp {
 	// newlayout := "yyyy-mm-dd hh:mm:ss + nsec nanoseconds"
 	newTimestamp, err := time.Parse(importLayout, s)
 	if err != nil {
-		AlternateLayout := "02-Jan-06 03.04.05 PM -07:00"
-		newTimestamp, err = time.Parse(AlternateLayout, s)
+		importLayoutNoNano := "02-Jan-06 03.04.05 PM -07:00"
+		newTimestamp, err = time.Parse(importLayoutNoNano, s)
 		if err != nil {
-			fmt.Println("Not able to parse time:", err)
+			importLayoutTimezone := "02-Jan-06 03.04.05.000000000 PM MST"
+			newTimestamp, err = time.Parse(importLayoutTimezone, s)
+			if err != nil {
+				fmt.Println("Not able to parse time:", err)
+			}
 		}
 	}
 	// log.Debug(newTimestamp, " And the Timestamp: ", ToTimestamp(newTimestamp))
