@@ -18,6 +18,23 @@ func ToBool(s string) bool {
 	}
 }
 
+//convinience function to cat errors
+func parseStringToFloat64(s string) float64 {
+	number, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return number
+	}
+	return 42
+}
+
+func parseStringToInt64(s string) int64 {
+	number, err := strconv.ParseInt(s, 64, 8)
+	if err != nil {
+		return number
+	}
+	return 42
+}
+
 //this is copied form the tmpmodels
 func ToTimestamp(t time.Time) *tspb.Timestamp {
 	ts, _ := ptypes.TimestampProto(t)
