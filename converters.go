@@ -3,6 +3,7 @@ package DataTyeConverter
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	ptypes "github.com/golang/protobuf/ptypes"
@@ -20,7 +21,7 @@ func ToBool(s string) bool {
 
 //convinience function to cat errors
 func parseStringToFloat64(s string) float64 {
-	number, err := strconv.ParseFloat(s, 64)
+	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		return number
 	}
@@ -28,7 +29,7 @@ func parseStringToFloat64(s string) float64 {
 }
 
 func parseStringToInt64(s string) int64 {
-	number, err := strconv.ParseInt(s, 64, 8)
+	number, err := strconv.ParseInt(strings.TrimSpace(s), 64, 8)
 	if err != nil {
 		return number
 	}
