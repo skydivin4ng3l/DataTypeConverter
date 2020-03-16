@@ -20,7 +20,7 @@ func ToBool(s string) bool {
 }
 
 //convinience function to cat errors
-func parseStringToFloat64(s string) float64 {
+func ParseStringToFloat64(s string) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		return number
@@ -28,7 +28,7 @@ func parseStringToFloat64(s string) float64 {
 	return 42
 }
 
-func parseStringToInt64(s string) int64 {
+func ParseStringToInt64(s string) int64 {
 	number, err := strconv.ParseInt(strings.TrimSpace(s), 64, 8)
 	if err != nil {
 		return number
