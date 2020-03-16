@@ -29,11 +29,11 @@ func ParseStringToFloat64(s string) float64 {
 }
 
 func ParseStringToInt64(s string) int64 {
-	number, err := strconv.ParseInt(strings.TrimSpace(s), 64, 8)
+	number, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
 	if err != nil {
 		return number
 	}
-	return 42
+	return 0
 }
 
 //this is copied form the tmpmodels
