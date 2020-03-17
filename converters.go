@@ -84,6 +84,8 @@ func YYYYMMDDHHMMSSToTime(s string) time.Time {
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	importLayouts := []string{
 		"02-Jan-06",
+		"02-01-2006",
+        	"02.01.2006-03:04",
 		"20060102030405-0700",
 		"02-Jan-06 03.04.05 PM -07:00",
 		"02-Jan-06 03.04.05.000000000 PM MST",
