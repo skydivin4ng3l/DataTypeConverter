@@ -23,7 +23,7 @@ func storeFailiure(unparseable string, conFailStat *sync.Map) {
 
 func PrintFailStat(conFailStat *sync.Map) {
 	conFailStat.Range(func(unparseable, counter interface{}) bool {
-		log.Infof("Was not able to parse: ", unparseable, " ", counter, " times")
+		log.Infof("Was NOT able to parse: '%s'  %d times!", unparseable.(string), counter.(int64))
 		return true
 	})
 }
@@ -76,21 +76,6 @@ func YYYYMMDDHHMMSSToTime(s string) time.Time {
 	return time.Date(year, month, day, hour, minute, second, nanoseconds, location)
 }
 
-// 28-APR-19
-// func EletaDateToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
-// 	importLayout := "02-Jan-06"
-
-// 	newTimestamp, err := time.Parse(importLayout, s)
-// 	if err != nil {
-// 		// fmt.Println("Not able to parse time:", err)
-// 		storeFailiure(s, conFailStat)
-// 		return ToTimestamp(time.Time{})
-
-// 	}
-// 	// log.Debug(newTimestamp, ToTimestamp(newTimestamp))
-// 	return ToTimestamp(newTimestamp)
-// }
-
 //01-APR-19 03.12.00.000000000 PM +02:00
 //01-APR-19 03.12.00 PM +02:00
 //01-APR-19 03.12.00.000000000 PM GMT
@@ -98,43 +83,18 @@ func YYYYMMDDHHMMSSToTime(s string) time.Time {
 //20181231231649+0000 YYYYMMDDHHMMSS+0000
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	importLayouts := []string{
-		"02-Jan-06 03.04.05.000000000 PM -07:00",
-		"02-Jan-06 03.04.05.000000000 PM MST",
-		"02-Jan-06 03.04.05 PM -07:00",
-		"20060102030405-0700",
 		"02-Jan-06",
+		"20060102030405-0700",
+		"02-Jan-06 03.04.05 PM -07:00",
+		"02-Jan-06 03.04.05.000000000 PM MST",
+		"02-Jan-06 03.04.05.000000000 PM -07:00",
 	}
 	for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
-		if err != nil {
-			storeFailiure(s, conFailStat)
-		} else {
+		if err == nil {
 			return ToTimestamp(newTimestamp)
 		}
 	}
+	storeFailiure(s, conFailStat)
 	return ToTimestamp(time.Time{})
-	// importLayout := "02-Jan-06 03.04.05.000000000 PM -07:00"
-	// newTimestamp, err := time.Parse(importLayout, s)
-	// if err != nil {
-	// 	importLayoutNoNano := "02-Jan-06 03.04.05 PM -07:00"
-	// 	newTimestamp, err = time.Parse(importLayoutNoNano, s)
-	// 	if err != nil {
-	// 		importLayoutTimezone := "02-Jan-06 03.04.05.000000000 PM MST"
-	// 		newTimestamp, err = time.Parse(importLayoutTimezone, s)
-	// 		if err != nil {
-	// 			importLayoutNumberDate := "20060102030405-0700"
-	// 			newTimestamp, err = time.Parse(importLayoutNumberDate, s)
-	// 			if err != nil {
-	// 				importLayoutDate := "02-Jan-06"
-	// 				newTimestamp, err = time.Parse(importLayoutDate, s)
-	// 				if err != nil {
-	// 					// fmt.Println("Not able to parse time:", err)
-	// 					storeFailiure(s, conFailStat)
-	// 					return ToTimestamp(time.Time{})
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// return ToTimestamp(newTimestamp)
 }
