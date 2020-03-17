@@ -1,14 +1,31 @@
 package DataTyeConverter
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	ptypes "github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	log "github.com/sirupsen/logrus"
 )
+
+func storeFailiure(unparseable string, conFailStat *sync.Map) {
+	counter, ok := conFailStat.Load(unparseable)
+	if ok {
+		conFailStat.Store(unparseable, counter.(int64)+1)
+	} else {
+		conFailStat.Store(unparseable, 1)
+	}
+}
+
+func PrintFailStat(conFailStat *sync.Map) {
+	conFailStat.Range(func(unparseable, counter interface{}) bool {
+		log.Infof("Was not able to parse: ", unparseable, " ", counter, " times")
+		return true
+	})
+}
 
 // this converts the J, B notation of bools to go bools
 func ToBool(s string) bool {
@@ -20,17 +37,19 @@ func ToBool(s string) bool {
 }
 
 //convinience function to cat errors
-func ParseStringToFloat64(s string) float64 {
+func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
+		storeFailiure(s, conFailStat)
 		return 0
 	}
 	return number
 }
 
-func ParseStringToInt64(s string) int64 {
+func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 	number, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
 	if err != nil {
+		storeFailiure(s, conFailStat)
 		return 0
 	}
 	return number
@@ -71,12 +90,14 @@ func NumberDateToTime(s string) time.Time {
 }
 
 // 28-APR-19
-func EletaDateToTimestamp(s string) *tspb.Timestamp {
+func EletaDateToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	importLayout := "02-Jan-06"
 
 	newTimestamp, err := time.Parse(importLayout, s)
 	if err != nil {
-		fmt.Println("Not able to parse time:", err)
+		// fmt.Println("Not able to parse time:", err)
+		storeFailiure(s, conFailStat)
+		return ToTimestamp(time.Time{})
 
 	}
 	// log.Debug(newTimestamp, ToTimestamp(newTimestamp))
@@ -86,10 +107,8 @@ func EletaDateToTimestamp(s string) *tspb.Timestamp {
 //01-APR-19 03.12.00.000000000 PM +02:00
 //01-APR-19 03.12.00.000000000 PM GMT
 //01-APR-19 03.12.00 PM +02:00
-func EletaTimestampToTimestamp(s string) *tspb.Timestamp {
+func EletaTimestampToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	importLayout := "02-Jan-06 03.04.05.000000000 PM -07:00"
-	// AlternateLayout := "02-Jan-06 03.04.05.000000000 PM -07:00"
-	// newlayout := "yyyy-mm-dd hh:mm:ss + nsec nanoseconds"
 	newTimestamp, err := time.Parse(importLayout, s)
 	if err != nil {
 		importLayoutNoNano := "02-Jan-06 03.04.05 PM -07:00"
@@ -98,10 +117,10 @@ func EletaTimestampToTimestamp(s string) *tspb.Timestamp {
 			importLayoutTimezone := "02-Jan-06 03.04.05.000000000 PM MST"
 			newTimestamp, err = time.Parse(importLayoutTimezone, s)
 			if err != nil {
-				fmt.Println("Not able to parse time:", err)
+				// fmt.Println("Not able to parse time:", err)
+				storeFailiure(s, conFailStat)
 				return ToTimestamp(time.Time{})
 			}
-			// log.Debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>> ", newTimestamp, " And the Timestamp: ", ToTimestamp(newTimestamp))
 		}
 	}
 	return ToTimestamp(newTimestamp)
