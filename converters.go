@@ -16,7 +16,8 @@ func storeFailiure(unparseable string, conFailStat *sync.Map) {
 	if ok {
 		conFailStat.Store(unparseable, counter.(int64)+1)
 	} else {
-		conFailStat.Store(unparseable, 1)
+		var once int64 = 1
+		conFailStat.Store(unparseable, once)
 	}
 }
 
@@ -90,24 +91,26 @@ func NumberDateToTime(s string) time.Time {
 }
 
 // 28-APR-19
-func EletaDateToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
-	importLayout := "02-Jan-06"
+// func EletaDateToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
+// 	importLayout := "02-Jan-06"
 
-	newTimestamp, err := time.Parse(importLayout, s)
-	if err != nil {
-		// fmt.Println("Not able to parse time:", err)
-		storeFailiure(s, conFailStat)
-		return ToTimestamp(time.Time{})
+// 	newTimestamp, err := time.Parse(importLayout, s)
+// 	if err != nil {
+// 		// fmt.Println("Not able to parse time:", err)
+// 		storeFailiure(s, conFailStat)
+// 		return ToTimestamp(time.Time{})
 
-	}
-	// log.Debug(newTimestamp, ToTimestamp(newTimestamp))
-	return ToTimestamp(newTimestamp)
-}
+// 	}
+// 	// log.Debug(newTimestamp, ToTimestamp(newTimestamp))
+// 	return ToTimestamp(newTimestamp)
+// }
 
 //01-APR-19 03.12.00.000000000 PM +02:00
+//01-APR-19 03.12.00 PM +02:00
 //01-APR-19 03.12.00.000000000 PM GMT
 //01-APR-19 03.12.00 PM +02:00
-func EletaTimestampToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
+//20181231231649+0000 YYYYMMDDHHMMSS+0000
+func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	importLayout := "02-Jan-06 03.04.05.000000000 PM -07:00"
 	newTimestamp, err := time.Parse(importLayout, s)
 	if err != nil {
@@ -117,9 +120,17 @@ func EletaTimestampToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp 
 			importLayoutTimezone := "02-Jan-06 03.04.05.000000000 PM MST"
 			newTimestamp, err = time.Parse(importLayoutTimezone, s)
 			if err != nil {
-				// fmt.Println("Not able to parse time:", err)
-				storeFailiure(s, conFailStat)
-				return ToTimestamp(time.Time{})
+				importLayoutNumberDate := "20060102030405-0700"
+				newTimestamp, err = time.Parse(importLayoutNumberDate, s)
+				if err != nil {
+					importLayoutDate := "02-Jan-06"
+					newTimestamp, err = time.Parse(importLayoutDate, s)
+					if err != nil {
+						// fmt.Println("Not able to parse time:", err)
+						storeFailiure(s, conFailStat)
+						return ToTimestamp(time.Time{})
+					}
+				}
 			}
 		}
 	}
