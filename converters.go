@@ -1,6 +1,7 @@
 package DataTyeConverter
 
 import (
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,7 +43,7 @@ func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		storeFailiure(s, conFailStat)
-		return 0
+		return math.MaxFloat64
 	}
 	return number
 }
@@ -51,7 +52,7 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 	number, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
 	if err != nil {
 		storeFailiure(s, conFailStat)
-		return 0
+		return math.MinInt64
 	}
 	return number
 }
@@ -62,41 +63,27 @@ func ToTimestamp(t time.Time) *tspb.Timestamp {
 	return ts
 }
 
-func YYYYMMDDHHMMSSToTime(s string) time.Time {
-	year, _ := strconv.Atoi(s[0:4])
-	monthNumber, _ := strconv.Atoi(s[5:7])
-	month := time.Month(monthNumber)
-	day, _ := strconv.Atoi(s[8:10])
-	hour, _ := strconv.Atoi(s[11:13])
-	minute, _ := strconv.Atoi(s[14:16])
-	second, _ := strconv.Atoi(s[17:19])
-	nanoseconds := 0
-	location, _ := time.LoadLocation("Europe/Berlin")
-
-	return time.Date(year, month, day, hour, minute, second, nanoseconds, location)
-}
-
 // 01-APR-19 03.12.00.000000000 PM +02:00
 // 01-APR-19 03.12.00 PM +02:00
 // 01-APR-19 03.12.00.000000000 PM GMT
-// 01-APR-19 03.12.00 PM +02:00
-// 20181231231649+0000 YYYYMMDDHHMMSS+0000
+// 20181231231649+0000 <- YYYYMMDDHHMMSS+0000
+// 2019-01-01 00:00:00.0
 // 2019-01-01
 // 30.12.2018-00:00
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	localtime, _ := time.LoadLocation("Europe/Berlin")
 	time.Local = localtime
 	importLayouts := []string{
+		// for layout information: https://yourbasic.org/golang/format-parse-string-time-date-example/
 		"02-Jan-06",
 		"02-01-2006",
-        	"02.01.2006-03:04",
+		"2016-01-02",
+		"02.01.2006-03:04",
+		"2006-01-02 03:04:05.999",
 		"20060102030405-0700",
 		"02-Jan-06 03.04.05 PM -07:00",
 		"02-Jan-06 03.04.05.000000000 PM MST",
 		"02-Jan-06 03.04.05.000000000 PM -07:00",
-		"02-01-2006",
-		"02.01.2006-03:04",
-		"2016-01-02",
 	}
 	for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
