@@ -82,6 +82,8 @@ func YYYYMMDDHHMMSSToTime(s string) time.Time {
 //01-APR-19 03.12.00 PM +02:00
 //20181231231649+0000 YYYYMMDDHHMMSS+0000
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
+	localtime, _ := time.LoadLocation("Europe/Berlin")
+	time.Local = localtime
 	importLayouts := []string{
 		"02-Jan-06",
 		"20060102030405-0700",
@@ -92,6 +94,7 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
 		if err == nil {
+			// fmt.Printf("String: %s got parsed to: %v \n", s, newTimestamp)
 			return ToTimestamp(newTimestamp)
 		}
 	}
