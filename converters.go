@@ -76,11 +76,13 @@ func YYYYMMDDHHMMSSToTime(s string) time.Time {
 	return time.Date(year, month, day, hour, minute, second, nanoseconds, location)
 }
 
-//01-APR-19 03.12.00.000000000 PM +02:00
-//01-APR-19 03.12.00 PM +02:00
-//01-APR-19 03.12.00.000000000 PM GMT
-//01-APR-19 03.12.00 PM +02:00
-//20181231231649+0000 YYYYMMDDHHMMSS+0000
+// 01-APR-19 03.12.00.000000000 PM +02:00
+// 01-APR-19 03.12.00 PM +02:00
+// 01-APR-19 03.12.00.000000000 PM GMT
+// 01-APR-19 03.12.00 PM +02:00
+// 20181231231649+0000 YYYYMMDDHHMMSS+0000
+// 2019-01-01
+// 30.12.2018-00:00
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	importLayouts := []string{
 		"02-Jan-06",
@@ -88,6 +90,9 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 		"02-Jan-06 03.04.05 PM -07:00",
 		"02-Jan-06 03.04.05.000000000 PM MST",
 		"02-Jan-06 03.04.05.000000000 PM -07:00",
+		"02-01-2006",
+		"02.01.2006-03:04",
+		"2016-01-02",
 	}
 	for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
