@@ -87,7 +87,7 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	importLayouts := []string{
 		"02-Jan-06",
 		"02-01-2006",
-        	"02.01.2006-03:04",
+		"02.01.2006-03:04",
 		"20060102030405-0700",
 		"02-Jan-06 03.04.05 PM -07:00",
 		"02-Jan-06 03.04.05.000000000 PM MST",
@@ -95,6 +95,8 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 		"02-01-2006",
 		"02.01.2006-03:04",
 		"2016-01-02",
+		"20060102030405",
+		"20060102",
 	}
 	for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
