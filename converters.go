@@ -9,6 +9,7 @@ import (
 
 	ptypes "github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -42,8 +43,17 @@ func ToBool(s string) bool {
 func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
-		storeFailiure(s, conFailStat)
+		storeFailiure(s+" asFloat64", conFailStat)
 		return math.MaxFloat64
+	}
+	return number
+}
+
+func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
+	number, err := decimal.NewFromString(s)
+	if err != nil {
+		storeFailiure(s+" asDecimal", conFailStat)
+		return decimal.New(math.MinInt64, math.MinInt32)
 	}
 	return number
 }
@@ -51,8 +61,12 @@ func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 	number, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
 	if err != nil {
-		storeFailiure(s, conFailStat)
-		return math.MinInt64
+		decimalNumber, err := decimal.NewFromString(s)
+		if err != nil {
+			storeFailiure(s+" asInt64", conFailStat)
+			return math.MinInt64
+		}
+		return decimal.IntPart(decimalNumber)
 	}
 	return number
 }
@@ -100,7 +114,7 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 		"20060102",
 		"200610230405",
 		"200601023405",
-		"2006010230405",
+		"20060102150405",
 	}
 	for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
@@ -109,6 +123,6 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 			return newTimestamp
 		}
 	}
-	storeFailiure(s, conFailStat)
+	storeFailiure(s+" asTime", conFailStat)
 	return time.Time{}
 }
