@@ -118,6 +118,8 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 		"20060102 1504",
 		// "200610230405",
 		"20060102 150405",
+		"20060102 30405",
+		"20060102 304",
 	}
 	for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
