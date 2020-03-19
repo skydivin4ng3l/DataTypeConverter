@@ -25,7 +25,7 @@ func storeFailiure(unparseable string, conFailStat *sync.Map) {
 
 func PrintFailStat(conFailStat *sync.Map) {
 	conFailStat.Range(func(unparseable, counter interface{}) bool {
-		log.Infof("Was NOT able to parse: '%s'  %d times!", unparseable.(string), counter.(int64))
+		log.Infof("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
 		return true
 	})
 }
