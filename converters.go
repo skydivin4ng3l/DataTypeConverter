@@ -1,7 +1,7 @@
-package DataTypeConverter
+package main
 
 import (
-	// "fmt"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -72,6 +72,18 @@ func ToTimestamp(t time.Time) *tspb.Timestamp {
 // 2019-01-01
 // 30.12.2018-00:00
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
+
+	return ToTimestamp(ParseStringToTime(s, conFailStat))
+}
+
+// 01-APR-19 03.12.00.000000000 PM +02:00
+// 01-APR-19 03.12.00 PM +02:00
+// 01-APR-19 03.12.00.000000000 PM GMT
+// 20181231231649+0000 <- YYYYMMDDHHMMSS+0000
+// 2019-01-01 00:00:00.0
+// 2019-01-01
+// 30.12.2018-00:00
+func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 	localtime, _ := time.LoadLocation("Europe/Berlin")
 	time.Local = localtime
 	importLayouts := []string{
@@ -95,14 +107,16 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 		newTimestamp, err := time.Parse(importLayout, s)
 		if err == nil {
 			// fmt.Printf("String: %s got parsed to: %v \n", s, newTimestamp)
-			return ToTimestamp(newTimestamp)
+			return newTimestamp
 		}
 	}
 	storeFailiure(s, conFailStat)
-	return ToTimestamp(time.Time{})
+	return time.Time{}
 }
 
-/* func main() {
-	var mapsy sync.Map
-	fmt.Println(ParseStringToTimestamp("2019102835400", &mapsy))
-} */
+func main() {
+	//var mapsy sync.Map
+	tims, err := time.Parse("2006 01 02 3 04 05", "2019 03 08 7 43 00")
+	//fmt.Println(ParseStringToTimestamp("2019030874300", &mapsy))
+	fmt.Println(ToTimestamp(tims), err)
+}
