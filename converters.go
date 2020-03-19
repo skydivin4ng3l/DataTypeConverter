@@ -1,7 +1,6 @@
-package main
+package DataTypeConverter
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -112,11 +111,4 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 	}
 	storeFailiure(s, conFailStat)
 	return time.Time{}
-}
-
-func main() {
-	//var mapsy sync.Map
-	tims, err := time.Parse("2006 01 02 3 04 05", "2019 03 08 7 43 00")
-	//fmt.Println(ParseStringToTimestamp("2019030874300", &mapsy))
-	fmt.Println(ToTimestamp(tims), err)
 }
