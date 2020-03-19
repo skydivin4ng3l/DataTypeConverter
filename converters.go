@@ -66,7 +66,7 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 			storeFailiure(s+" asInt64", conFailStat)
 			return math.MinInt64
 		}
-		return decimal.IntPart(decimalNumber)
+		return decimalNumber.IntPart()
 	}
 	return number
 }
