@@ -1,6 +1,7 @@
-package DataTyeConverter
+package DataTypeConverter
 
 import (
+	// "fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -100,3 +101,8 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	storeFailiure(s, conFailStat)
 	return ToTimestamp(time.Time{})
 }
+
+/* func main() {
+	var mapsy sync.Map
+	fmt.Println(ParseStringToTimestamp("2019102835400", &mapsy))
+} */
