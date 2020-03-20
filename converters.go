@@ -1,6 +1,8 @@
 package DataTypeConverter
 
 import (
+	"fmt"
+	"log"
 	"math"
 	"os"
 	"strconv"
@@ -10,25 +12,28 @@ import (
 
 	ptypes "github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/natefinch/lumberjack"
 	"github.com/shopspring/decimal"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
-const LOG_FILE = "/tmp/parseError.log"
+// const LOG_FILE = "/parseError.log"
+var errLog *log.Logger
 
 func setupLogFile() {
-	// create the logger
-	logger := log.New()
-	// with Json Formatter
-	logger.Formatter = &log.JSONFormatter{}
-	logger.SetOutput(os.Stdout)
+	e, err := os.OpenFile("./foo.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 
-	file, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0755)
 	if err != nil {
-		logger.Fatal(err)
+		fmt.Printf("error opening file: %v", err)
+		os.Exit(1)
 	}
-	defer file.Close()
-	logger.SetOutput(file)
+	errLog = log.New(e, "", log.Ldate|log.Ltime)
+	errLog.SetOutput(&lumberjack.Logger{
+		Filename:   "./foo.log",
+		MaxSize:    1,  // megabytes after which new file is created
+		MaxBackups: 3,  // number of backups
+		MaxAge:     28, //days
+	})
 }
 
 func storeFailiure(unparseable string, conFailStat *sync.Map) {
@@ -44,7 +49,8 @@ func storeFailiure(unparseable string, conFailStat *sync.Map) {
 func PrintFailStat(conFailStat *sync.Map) {
 	setupLogFile()
 	conFailStat.Range(func(unparseable, counter interface{}) bool {
-		log.Infof("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
+		logrus.Infof("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
+		errLog.Printf("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
 		return true
 	})
 }
