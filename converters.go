@@ -21,7 +21,7 @@ import (
 var errLog *log.Logger
 
 func setupLogFile() {
-	e, err := os.OpenFile("./foo.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	e, err := os.OpenFile("./parseError.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 
 	if err != nil {
 		fmt.Printf("error opening file: %v", err)
@@ -53,6 +53,7 @@ func PrintFailStat(conFailStat *sync.Map) {
 		errLog.Printf("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
 		return true
 	})
+	errLog.Printf("-----> End of logging of last Collection and beginning of new Collection if any")
 }
 
 // this converts the J, B notation of bools to go bools
