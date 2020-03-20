@@ -29,7 +29,7 @@ func setupLogFile() {
 	}
 	errLog = log.New(e, "", log.Ldate|log.Ltime)
 	errLog.SetOutput(&lumberjack.Logger{
-		Filename:   "./foo.log",
+		Filename:   "./parseError.log",
 		MaxSize:    1,  // megabytes after which new file is created
 		MaxBackups: 3,  // number of backups
 		MaxAge:     28, //days
