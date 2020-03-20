@@ -2,6 +2,7 @@ package DataTypeConverter
 
 import (
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,6 +13,23 @@ import (
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
+
+const LOG_FILE = "/tmp/parseError.log"
+
+func setupLogFile() {
+	// create the logger
+	logger := log.New()
+	// with Json Formatter
+	logger.Formatter = &log.JSONFormatter{}
+	logger.SetOutput(os.Stdout)
+
+	file, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0755)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer file.Close()
+	logger.SetOutput(file)
+}
 
 func storeFailiure(unparseable string, conFailStat *sync.Map) {
 	counter, ok := conFailStat.Load(unparseable)
@@ -24,6 +42,7 @@ func storeFailiure(unparseable string, conFailStat *sync.Map) {
 }
 
 func PrintFailStat(conFailStat *sync.Map) {
+	setupLogFile()
 	conFailStat.Range(func(unparseable, counter interface{}) bool {
 		log.Infof("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
 		return true
