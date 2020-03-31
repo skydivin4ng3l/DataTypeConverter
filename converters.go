@@ -126,11 +126,11 @@ func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
 
 	if len(splitsPlus) <= 1 {
 		splitMinus = strings.Split(s, "-")
-		s_prefix = strings.Join(splitMinus[:2], "-")
-		if len(splitMinus[3]) <= 5 {
+		s_prefix = strings.Join(splitMinus[:3], "-")
+		if len(splitMinus[3]) < 5 {
 			err = errors.New("TZ Suffix has not the Format -00:00")
 		}
-	} else if len(splitsPlus[1]) <= 5 {
+	} else if len(splitsPlus[1]) < 5 {
 		err = errors.New("TZ Suffix has not the Format +00:00")
 	}
 
