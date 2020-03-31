@@ -1,6 +1,7 @@
 package DataTypeConverter
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -115,6 +116,40 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	return ToTimestamp(ParseStringToTime(s, conFailStat))
 }
 
+// Cuts '+07:00' from prefix+07:00 (7 exemplary)
+func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
+	var err error
+	var splitsPlus, splitMinus []string
+
+	splitsPlus = strings.Split(s, "+")
+	s_prefix := splitsPlus[0]
+
+	if len(splitsPlus) <= 1 {
+		splitMinus = strings.Split(s, "-")
+		s_prefix = strings.Join(splitMinus[:2], "-")
+		if len(splitMinus[3]) <= 5 {
+			err = errors.New("TZ Suffix has not the Format -00:00")
+		}
+	} else if len(splitsPlus[1]) <= 5 {
+		err = errors.New("TZ Suffix has not the Format +00:00")
+	}
+
+	if err != nil {
+		storeFailiure("'"+s+"' could not remove TimeZone with Format -/+00:00", conFailStat)
+	}
+
+	return s_prefix, err
+}
+
+func ParseStringToDate(s string, conFailStat *sync.Map) *tspb.Timestamp {
+	stringTZFree, err := stringRemoveTZOffset(s, conFailStat)
+	if err != nil {
+		storeFailiure("'"+s+"' asDate", conFailStat)
+		return ToTimestamp(time.Time{})
+	}
+	return ToTimestamp(ParseStringToTime(stringTZFree, conFailStat))
+}
+
 // 01-APR-19 03.12.00.000000000 PM +02:00
 // 01-APR-19 03.12.00 PM +02:00
 // 01-APR-19 03.12.00.000000000 PM GMT
@@ -137,6 +172,8 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 		"2006-01-02T15:04:05.999999-07:00",
 		"2006-01-02 15:04:05.999",
 		"2006-01-02 03:04:05.999",
+		"2006-01-02 03:04:05.999-0700",
+		"2006-01-02 15:04:05 -0700",
 		"20060102030405-0700",
 		"20060102150405-0700", // have to test this	20190609133749+0000
 		"20060102150405",
