@@ -119,6 +119,7 @@ func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 // Cuts '+07:00' from prefix+07:00 (7 exemplary)
 func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
 	var err error
+	s_len := len(s)
 	var splitsPlus, splitMinus []string
 
 	splitsPlus = strings.Split(s, "+")
@@ -126,18 +127,19 @@ func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
 
 	if len(splitsPlus) <= 1 {
 		splitMinus = strings.Split(s, "-")
-		s_prefix = strings.Join(splitMinus[:3], "-")
-		if len(splitMinus[3]) < 5 {
+		splitMinus_len := len(splitMinus)
+		s_prefix = strings.Join(splitMinus[:splitMinus_len-1], "-")
+		if len(splitMinus[splitMinus_len-1]) < 5 {
 			err = errors.New("TZ Suffix has not the Format -00:00")
 		}
 	} else if len(splitsPlus[1]) < 5 {
 		err = errors.New("TZ Suffix has not the Format +00:00")
 	}
 
-	if err != nil {
+	if err != nil || len(s_prefix)+6 != s_len {
 		storeFailiure("'"+s+"' could not remove TimeZone with Format -/+00:00", conFailStat)
 	}
-
+	s_prefix = strings.TrimSpace(s_prefix)
 	return s_prefix, err
 }
 
@@ -148,6 +150,32 @@ func ParseStringToDate(s string, conFailStat *sync.Map) *tspb.Timestamp {
 		return ToTimestamp(time.Time{})
 	}
 	return ToTimestamp(ParseStringToTime(stringTZFree, conFailStat))
+}
+
+func TryLayoutsToParseStringToTime(s string, importLayouts []string, conFailStat *sync.Map) (time.Time, error) {
+	for _, importLayout := range importLayouts {
+		newTime, err := time.Parse(importLayout, s)
+
+		if err == nil {
+			// fmt.Printf("String: %s got parsed to: %v \n", s, newTime)
+			return newTime, err
+		}
+	}
+	storeFailiure("'"+s+"' asTime", conFailStat)
+	return time.Time{}, errors.New("Could not Parse with this ImportLayouts")
+}
+
+func TryLayoutsToParseStringToTimeWithoutTZ(s string, importLayoutsWithoutTimeZone []string, conFailStat *sync.Map) (time.Time, error) {
+	stringTZFree, tz_err := stringRemoveTZOffset(s, conFailStat)
+	if tz_err != nil {
+		//TODO: TZAbr removal
+	}
+	newTime, err := TryLayoutsToParseStringToTime(stringTZFree, importLayoutsWithoutTimeZone[:], conFailStat)
+	if err != nil {
+		storeFailiure("'"+s+"' asTime without TimeZone", conFailStat)
+	}
+
+	return newTime, errors.New("Could not Parse without TZ with this ImportLayouts")
 }
 
 // 01-APR-19 03.12.00.000000000 PM +02:00
@@ -187,13 +215,29 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 		"20060102 30405",
 		"20060102 304",
 	}
-	for _, importLayout := range importLayouts {
+	importLayoutsWithoutTimeZone := []string{
+		"2006-01-02-07:00", //TODO Needs Rework: Here should be the Layouts after the removal of TZ
+	}
+	newTime := time.Time{}
+
+	newTime, err := TryLayoutsToParseStringToTime(s, importLayouts[:], conFailStat)
+	if err != nil {
+		newTime, err = TryLayoutsToParseStringToTimeWithoutTZ(s, importLayoutsWithoutTimeZone[:], conFailStat)
+		if err != nil {
+			storeFailiure("'"+s+"' asTime", conFailStat)
+		}
+	}
+
+	return newTime
+	/* for _, importLayout := range importLayouts {
 		newTimestamp, err := time.Parse(importLayout, s)
+
 		if err == nil {
 			// fmt.Printf("String: %s got parsed to: %v \n", s, newTimestamp)
 			return newTimestamp
 		}
 	}
 	storeFailiure("'"+s+"' asTime", conFailStat)
-	return time.Time{}
+	return time.Time{} */
+
 }
