@@ -71,7 +71,7 @@ func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		storeFailure("'"+s+"' asFloat64", conFailStat)
-		return
+		return 0.0
 	}
 	return number
 }
@@ -80,7 +80,7 @@ func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	number, err := decimal.NewFromString(s)
 	if err != nil {
 		storeFailure("'"+s+"' asDecimal", conFailStat)
-		return
+		return 0
 	}
 	return number
 }
@@ -91,7 +91,7 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
 			storeFailure("'"+s+"' asInt64", conFailStat)
-			return
+			return 0
 		}
 		return decimalNumber.IntPart()
 	}
@@ -145,7 +145,7 @@ func ParseStringToDate(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	stringTZFree, err := stringRemoveTZOffset(s, conFailStat)
 	if err != nil {
 		storeFailure("'"+s+"' asDate", conFailStat)
-		return
+		return nil
 	}
 	return ToTimestamp(ParseStringToTime(stringTZFree, conFailStat))
 }
@@ -195,5 +195,5 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 		}
 	}
 	storeFailure("'"+s+"' asTime", conFailStat)
-	return
+	return nil
 }
