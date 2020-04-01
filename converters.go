@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -93,8 +92,8 @@ func (ps LoggedParseString) ParseStringToFloat64() float64 {
 func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
-		storeFailiure("'"+s+"' asFloat64", conFailStat)
-		return math.MaxFloat64
+		storeFailure("'"+s+"' asFloat64", conFailStat)
+		return 0.0
 	}
 	return number
 }
@@ -106,8 +105,8 @@ func (ps LoggedParseString) ParseStringToDecimal() decimal.Decimal {
 func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	number, err := decimal.NewFromString(s)
 	if err != nil {
-		storeFailiure("'"+s+"' asDecimal", conFailStat)
-		return decimal.New(math.MinInt64, math.MinInt32)
+		storeFailure("'"+s+"' asDecimal", conFailStat)
+		return decimal.NewFromInt(0)
 	}
 	return number
 }
@@ -121,8 +120,8 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
-			storeFailiure("'"+s+"' asInt64", conFailStat)
-			return math.MinInt64
+			storeFailure("'"+s+"' asInt64", conFailStat)
+			return 0
 		}
 		return decimalNumber.IntPart()
 	}
@@ -131,6 +130,11 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 
 //this is copied form the tmpmodels
 func ToTimestamp(t time.Time) *tspb.Timestamp {
+
+	if (t == time.Time{}){
+		return nil
+	}
+
 	ts, _ := ptypes.TimestampProto(t)
 	return ts
 }
@@ -185,8 +189,8 @@ func stringRemoveTZOffset(s string, conFailStat *sync.Map, tz_suffix_layout stri
 func ParseStringToDate(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	stringTZFree, err := stringRemoveTZOffset(s, conFailStat, "-07:00")
 	if err != nil {
-		storeFailiure("'"+s+"' asDate", conFailStat)
-		return ToTimestamp(time.Time{})
+		storeFailure("'"+s+"' asDate", conFailStat)
+		return nil
 	}
 	return ToTimestamp(ParseStringToTime(stringTZFree, conFailStat))
 }
