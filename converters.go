@@ -37,7 +37,7 @@ func setupLogFile() {
 	})
 }
 
-func storeFailiure(unparseable string, conFailStat *sync.Map) {
+func storeFailure(unparseable string, conFailStat *sync.Map) {
 	counter, ok := conFailStat.Load(unparseable)
 	if ok {
 		conFailStat.Store(unparseable, counter.(int64)+1)
@@ -70,8 +70,8 @@ func ToBool(s string) bool {
 func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
-		storeFailiure("'"+s+"' asFloat64", conFailStat)
-		return math.MaxFloat64
+		storeFailure("'"+s+"' asFloat64", conFailStat)
+		return
 	}
 	return number
 }
@@ -79,8 +79,8 @@ func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	number, err := decimal.NewFromString(s)
 	if err != nil {
-		storeFailiure("'"+s+"' asDecimal", conFailStat)
-		return decimal.New(math.MinInt64, math.MinInt32)
+		storeFailure("'"+s+"' asDecimal", conFailStat)
+		return
 	}
 	return number
 }
@@ -90,8 +90,8 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
-			storeFailiure("'"+s+"' asInt64", conFailStat)
-			return math.MinInt64
+			storeFailure("'"+s+"' asInt64", conFailStat)
+			return
 		}
 		return decimalNumber.IntPart()
 	}
@@ -135,7 +135,7 @@ func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
 	}
 
 	if err != nil {
-		storeFailiure("'"+s+"' could not remove TimeZone with Format -/+00:00", conFailStat)
+		storeFailure("'"+s+"' could not remove TimeZone with Format -/+00:00", conFailStat)
 	}
 
 	return s_prefix, err
@@ -144,8 +144,8 @@ func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
 func ParseStringToDate(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	stringTZFree, err := stringRemoveTZOffset(s, conFailStat)
 	if err != nil {
-		storeFailiure("'"+s+"' asDate", conFailStat)
-		return ToTimestamp(time.Time{})
+		storeFailure("'"+s+"' asDate", conFailStat)
+		return
 	}
 	return ToTimestamp(ParseStringToTime(stringTZFree, conFailStat))
 }
@@ -194,6 +194,6 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 			return newTimestamp
 		}
 	}
-	storeFailiure("'"+s+"' asTime", conFailStat)
-	return time.Time{}
+	storeFailure("'"+s+"' asTime", conFailStat)
+	return
 }
