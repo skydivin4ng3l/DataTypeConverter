@@ -80,7 +80,7 @@ func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	number, err := decimal.NewFromString(s)
 	if err != nil {
 		storeFailure("'"+s+"' asDecimal", conFailStat)
-		return 0
+		return decimal.NewFromString("0")
 	}
 	return number
 }
@@ -100,6 +100,11 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 
 //this is copied form the tmpmodels
 func ToTimestamp(t time.Time) *tspb.Timestamp {
+
+	if (t == time.Time{}){
+		return nil
+	}
+
 	ts, _ := ptypes.TimestampProto(t)
 	return ts
 }
@@ -195,5 +200,5 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 		}
 	}
 	storeFailure("'"+s+"' asTime", conFailStat)
-	return nil
+	return time.Time{}
 }
