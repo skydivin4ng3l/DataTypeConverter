@@ -80,7 +80,7 @@ func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	number, err := decimal.NewFromString(s)
 	if err != nil {
 		storeFailure("'"+s+"' asDecimal", conFailStat)
-		return decimal.NewFromInt64(0)
+		return decimal.NewFromInt(0)
 	}
 	return number
 }
