@@ -1,4 +1,4 @@
-module github.com/skydivin4ng3l/DataTypeConverter
+module github.com/skydivin4ng3l/datatypeconverter
 
 go 1.14
 

@@ -1,4 +1,4 @@
-package DataTypeConverter
+package datatypeconverter
 
 import (
 	"errors"
@@ -17,18 +17,46 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// TimeLayoutTrimedTimeZone defines the tz format tZoneLayoutToRemove
+// TimeLayoutTrimTimeZone defines the tz format tZoneLayoutToRemove
 // which shall be removed from a string so that the resulting string has the format tLayoutPostTZRemoval
 // so that string can be parsed as time
 // example TimeLayoutTrimedTimeZone{"2006-01-02", "-07:00"}
-type TimeLayoutTrimedTimeZone struct {
+type TimeLayoutTrimTimeZone struct {
 	tLayoutPostTZRemoval string
 	tZoneLayoutToRemove  string
 }
 
-var importLayoutsWithoutTimeZone = []TimeLayoutTrimedTimeZone{
-	TimeLayoutTrimedTimeZone{"2006-01-02", "-07:00"},
-	TimeLayoutTrimedTimeZone{"15:04:05", "-07:00"},
+var importLayoutsWithoutTimeZone = []TimeLayoutTrimTimeZone{
+	TimeLayoutTrimTimeZone{"2006-01-02", "-07:00"},
+	TimeLayoutTrimTimeZone{"15:04:05", "-07:00"},
+}
+
+var importLayouts = []string{
+	// for layout information: https://yourbasic.org/golang/format-parse-string-time-date-example/
+	"02-Jan-06",
+	"02-01-2006",
+	"02.01.2006",
+	"02.01.2006-03:04",
+	"02.01.2006-15:04",
+	"2006-01-02",
+	"2006-01-02-07:00",
+	"2006-01-02T15:04:05.999999-07:00",
+	"2006-01-02 15:04:05.999",
+	"2006-01-02 03:04:05.999",
+	"2006-01-02 03:04:05.999-0700",
+	"2006-01-02 15:04:05 -0700",
+	"20060102030405-0700",
+	"20060102150405-0700", // have to test this	20190609133749+0000
+	"20060102150405",
+	"02-Jan-06 03.04.05 PM -07:00",
+	"02-Jan-06 03.04.05.000000000 PM MST",
+	"02-Jan-06 03.04.05.000000000 PM -07:00",
+	"20060102",
+	"20060102 1504",
+	// "200610230405",
+	"20060102 150405",
+	"20060102 30405",
+	"20060102 304",
 }
 
 //LogFile The log filename which gets created in the executing directory
@@ -252,7 +280,7 @@ func ParseStringToDate(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	return ToTimestamp(ParseStringToTime(stringTZFree, conFailStat))
 }
 
-func (lps LoggedParseString) removeTZ(p TimeLayoutTrimedTimeZone) (string, error) {
+func (lps LoggedParseString) removeTZ(p TimeLayoutTrimTimeZone) (string, error) {
 	var err error
 	var sPrefix string
 	tzSuffixLayout := p.tZoneLayoutToRemove
@@ -272,13 +300,14 @@ func (lps LoggedParseString) removeTZ(p TimeLayoutTrimedTimeZone) (string, error
 //TryLayoutsToParseStringToTimeWithoutTZ trys to parse the string within LoggedParseString to time.Time without Timezone information using the importLayoutsWithoutTimeZone []Pair
 // []Pair should contain Pair{"TimeLayoutwithoutTimeZone","TimeZoneLayoutToRemove"}
 // example Pair{"2006-01-02", "-07:00"}
-func TryLayoutsToParseStringToTimeWithoutTZ(lps LoggedParseString, importLayoutsWithoutTimeZone []TimeLayoutTrimedTimeZone) (time.Time, error) {
+func TryLayoutsToParseStringToTimeWithoutTZ(lps LoggedParseString, importLayoutsWithoutTimeZone []TimeLayoutTrimTimeZone) (time.Time, error) {
 	localtime, _ := time.LoadLocation("Europe/Berlin")
 	time.Local = localtime
 	for _, importLayoutPair := range importLayoutsWithoutTimeZone {
 		stringTZFree, tzError := lps.removeTZ(importLayoutPair)
 		if tzError == nil {
-			newTime, err := time.Parse(importLayoutPair.tLayoutPostTZRemoval, stringTZFree)
+			// newTime, err := time.Parse(importLayoutPair.tLayoutPostTZRemoval, stringTZFree)
+			newTime, err := time.ParseInLocation(importLayoutPair.tLayoutPostTZRemoval, stringTZFree, localtime)
 			if err == nil {
 				return newTime, err
 			}
@@ -295,14 +324,14 @@ func TryLayoutsToParseStringToTimeWithTZ(lps LoggedParseString, importLayouts []
 	localtime, _ := time.LoadLocation("Europe/Berlin")
 	time.Local = localtime
 	for _, importLayout := range importLayouts {
-		newTime, err := time.Parse(importLayout, lps.s)
+		newTime, err := time.ParseInLocation(importLayout, lps.s, localtime)
 
 		if err == nil {
 			// fmt.Printf("String: %s got parsed to: %v \n", s, newTime)
 			return newTime, err
 		}
 	}
-	storeFailure("'"+lps.s+"' asTime", lps.conFailStat)
+	storeFailure("'"+lps.s+"' asTime with TimeZone", lps.conFailStat)
 	return time.Time{}, errors.New("Could not Parse with this ImportLayouts")
 }
 
@@ -317,7 +346,7 @@ func (lps LoggedParseString) TryLayoutsToParseStringToTime(i interface{}) (time.
 	case []string:
 		newTime, err = TryLayoutsToParseStringToTimeWithTZ(lps, v)
 		return newTime, err
-	case []TimeLayoutTrimedTimeZone:
+	case []TimeLayoutTrimTimeZone:
 		newTime, err = TryLayoutsToParseStringToTimeWithoutTZ(lps, v)
 		return newTime, err
 	default:
@@ -332,51 +361,7 @@ func (lps LoggedParseString) TryLayoutsToParseStringToTime(i interface{}) (time.
 type Pair [2]interface{}
 
 //ParseStringToTime trys to parse a string as time.Time and logs failures in conFailStat
-// 01-APR-19 03.12.00.000000000 PM +02:00
-// 01-APR-19 03.12.00 PM +02:00
-// 01-APR-19 03.12.00.000000000 PM GMT
-// 20181231231649+0000 <- YYYYMMDDHHMMSS+0000
-// 2019-01-01 00:00:00.0
-// 2019-01-01
-// 30.12.2018-00:00
 func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
-	localtime, locationError := time.LoadLocation("Europe/Berlin")
-	if locationError != nil {
-		logrus.Debug(locationError)
-	}
-	time.Local = localtime
-	importLayouts := []string{
-		// for layout information: https://yourbasic.org/golang/format-parse-string-time-date-example/
-		"02-Jan-06",
-		"02-01-2006",
-		"02.01.2006",
-		"02.01.2006-03:04",
-		"02.01.2006-15:04",
-		"2006-01-02",
-		// "2006-01-02-07:00",
-		"2006-01-02T15:04:05.999999-07:00",
-		"2006-01-02 15:04:05.999",
-		"2006-01-02 03:04:05.999",
-		"2006-01-02 03:04:05.999-0700",
-		"2006-01-02 15:04:05 -0700",
-		"20060102030405-0700",
-		"20060102150405-0700", // have to test this	20190609133749+0000
-		"20060102150405",
-		"02-Jan-06 03.04.05 PM -07:00",
-		"02-Jan-06 03.04.05.000000000 PM MST",
-		"02-Jan-06 03.04.05.000000000 PM -07:00",
-		"20060102",
-		"20060102 1504",
-		// "200610230405",
-		"20060102 150405",
-		"20060102 30405",
-		"20060102 304",
-	}
-	// importLayoutsWithoutTimeZone := []Pair{
-	// 	Pair{"2006-01-02", "-07:00"},
-	// 	Pair{"15:04:05", "-07:00"},
-	// }
-
 	newTime := time.Time{}
 	loggedParseString := LoggedParseString{s, conFailStat}
 	var err error
