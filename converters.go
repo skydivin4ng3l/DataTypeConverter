@@ -362,6 +362,7 @@ type Pair [2]interface{}
 //ParseStringToTime trys to parse a string as time.Time and logs failures in conFailStat
 func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 	newTime := time.Time{}
+	s = strings.TrimSpace(s)
 	loggedParseString := LoggedParseString{s, conFailStat}
 	var err error
 	newTime, err = loggedParseString.TryLayoutsToParseStringToTime(importLayouts[:])
