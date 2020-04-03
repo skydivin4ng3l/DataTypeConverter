@@ -123,7 +123,7 @@ func (lps LoggedParseString) ParseStringToDecimal() decimal.Decimal {
 
 // ParseStringToDecimal prases the string s as decimal.Decimal and logs any failures in conFailStat
 func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
-	number, err := decimal.NewFromString(s)
+	number, err := decimal.NewFromString(strings.TrimSpace(s))
 	if err != nil {
 		logger.StoreFailure("'"+s+"' asDecimal", conFailStat)
 		return decimal.New(math.MinInt64, math.MinInt32)
