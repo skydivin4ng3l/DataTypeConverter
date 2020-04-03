@@ -2,7 +2,9 @@ package datatypeconverter
 
 import (
 	"errors"
+	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -110,6 +112,7 @@ func (lps LoggedParseString) ParseStringToFloat64() float64 {
 func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
+
 		logger.StoreFailure("'"+s+"' asFloat64", conFailStat)
 		return math.MaxFloat64
 	}
@@ -131,18 +134,29 @@ func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	return number
 }
 
-// ParseStringToInt64 prases the string in LoggedParseString as int64 and logs any failures
+// CheckForError checks the given error and stores a possible failure
+func CheckForError(err error, rawValue interface{}, t reflect.Kind, failStat *sync.Map, fields ...string) {
+	if err != nil {
+		var field string
+		if len(fields) > 0 {
+			field = fmt.Sprintf(`Field %s: `, fields[0])
+		}
+		logger.StoreFailure(fmt.Sprintf(`%sFailed to parse "%s" as %s: %s`, field, rawValue, t.String(), err.Error()), failStat)
+	}
+}
+
+// ParseStringToInt64 parses the string in LoggedParseString as int64 and logs any failures
 func (lps LoggedParseString) ParseStringToInt64() int64 {
 	return ParseStringToInt64(lps.S, lps.ConFailStat)
 }
 
-// ParseStringToInt64 prases the string s as int64 and logs any failures in conFailStat
-func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
-	number, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
+// ParseStringToInt64 parses a string to an int64 and stores any failure
+func ParseStringToInt64(s string, failStat *sync.Map, fields ...string) int64 {
+	number, err := strconv.ParseInt(strings.Replace(s, " ", "", -1), 10, 64)
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
-			logger.StoreFailure("'"+s+"' asInt64", conFailStat)
+			CheckForError(err, s, reflect.Int64, failStat, fields...)
 			return math.MinInt64
 		}
 		return decimalNumber.IntPart()
