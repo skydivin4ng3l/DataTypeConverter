@@ -145,7 +145,7 @@ func CheckForError(err error, rawValue interface{}, t reflect.Kind, failStat *sy
 	}
 }
 
-// ParseStringToInt64 prases the string in LoggedParseString as int64 and logs any failures
+// ParseStringToInt64 parses the string in LoggedParseString as int64 and logs any failures
 func (lps LoggedParseString) ParseStringToInt64() int64 {
 	return ParseStringToInt64(lps.S, lps.ConFailStat)
 }
