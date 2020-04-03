@@ -98,7 +98,7 @@ func CheckForError(err error, rawValue interface{}, t reflect.Kind, failStat *sy
 
 // ParseStringToInt64 parses a string to an int64 and stores any failure
 func ParseStringToInt64(s string, failStat *sync.Map, fields ...string) int64 {
-	number, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
+	number, err := strconv.ParseInt(strings.Replace(s, " ", "", -1), 10, 64)
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
