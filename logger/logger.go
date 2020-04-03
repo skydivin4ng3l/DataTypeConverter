@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"sync"
 
 	"github.com/natefinch/lumberjack"
@@ -30,6 +31,17 @@ func SetupLogFile() {
 		MaxBackups: 3,  // number of backups
 		MaxAge:     28, //days
 	})
+}
+
+// CheckForError checks the given error and stores a possible failure
+func CheckForError(err error, rawValue interface{}, t reflect.Kind, failStat *sync.Map, fields ...string) {
+	if err != nil {
+		var field string
+		if len(fields) > 0 {
+			field = fmt.Sprintf(`Field %s: `, fields[0])
+		}
+		StoreFailure(fmt.Sprintf(`%sFailed to parse "%s" as %s: %s`, field, rawValue, t.String(), err.Error()), failStat)
+	}
 }
 
 //StoreFailure stores a string s into a map which counts how many times s getts added
