@@ -145,13 +145,18 @@ func CheckForError(err error, rawValue interface{}, t reflect.Kind, failStat *sy
 	}
 }
 
+// ParseStringToInt64 prases the string in LoggedParseString as int64 and logs any failures
+func (lps LoggedParseString) ParseStringToInt64() int64 {
+	return ParseStringToInt64(lps.S, lps.ConFailStat)
+}
+
 // ParseStringToInt64 parses a string to an int64 and stores any failure
 func ParseStringToInt64(s string, failStat *sync.Map, fields ...string) int64 {
 	number, err := strconv.ParseInt(strings.Replace(s, " ", "", -1), 10, 64)
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
-			CheckForError(err, decimalNumber, reflect.Int64, failStat, fields...)
+			CheckForError(err, s, reflect.Int64, failStat, fields...)
 			return math.MinInt64
 		}
 		return decimalNumber.IntPart()
