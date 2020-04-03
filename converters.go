@@ -151,7 +151,7 @@ func ParseStringToInt64(s string, failStat *sync.Map, fields ...string) int64 {
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
-			CheckForError(err, decimalNumber, reflect.Int64, failStat, fields...)
+			CheckForError(err, s, reflect.Int64, failStat, fields...)
 			return math.MinInt64
 		}
 		return decimalNumber.IntPart()
