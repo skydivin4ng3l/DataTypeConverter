@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -147,7 +148,7 @@ func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
 		storeFailure("'"+s+"' asFloat64", conFailStat)
-		return 0.0
+		return math.MaxFloat64
 	}
 	return number
 }
@@ -162,7 +163,7 @@ func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	number, err := decimal.NewFromString(s)
 	if err != nil {
 		storeFailure("'"+s+"' asDecimal", conFailStat)
-		return decimal.NewFromInt(0)
+		return decimal.New(math.MinInt64, math.MinInt32)
 	}
 	return number
 }
@@ -179,7 +180,7 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
 			storeFailure("'"+s+"' asInt64", conFailStat)
-			return 0
+			return math.MinInt64
 		}
 		return decimalNumber.IntPart()
 	}
@@ -240,25 +241,29 @@ func stringSplitTZOffset(lps LoggedParseString, tzSuffixLayout string) (string, 
 	var err error
 	s := strings.TrimSpace(lps.s)
 	sLength := len(s)
-	var splitsPlus, splitsMinus []string
-
-	splitsPlus = strings.Split(s, "+")
-	sPrefix := splitsPlus[0]
-	tzSuffix := "+" + splitsPlus[1]
-
-	if len(splitsPlus) <= 1 {
-		splitsMinus = strings.Split(s, "-")
-		splitMinusLength := len(splitsMinus)
-		sPrefix = strings.Join(splitsMinus[:splitMinusLength-1], "-")
-		if len(splitsMinus[splitMinusLength-1]) < len(tzSuffixLayout)-1 {
-			err = errors.New("TZ Suffix has not the Format " + tzSuffixLayout)
+	var splits []string
+	tzSuffix := ""
+	sPrefix := ""
+	delimiterSigns := []string{"+", "-"}
+	for _, sign := range delimiterSigns {
+		err = nil
+		splits = strings.Split(s, sign)
+		splitLength := len(splits)
+		if splitLength < 2 {
+			err = errors.New("TZ Suffix could not be found")
+			continue
 		}
-		tzSuffix = "-" + splitsMinus[splitMinusLength-1]
-	} else if len(splitsPlus[1]) < len(tzSuffixLayout)-1 {
-		err = errors.New("TZ Suffix has not the Format " + tzSuffixLayout)
+		tzSuffix = sign + splits[splitLength-1]
+		if len(tzSuffix) != len(tzSuffixLayout) {
+			err = errors.New("TZ Suffix has not the Format " + tzSuffixLayout)
+			tzSuffix = ""
+			continue
+		}
+		sPrefix = strings.Join(splits[:splitLength-1], sign)
+		break
 	}
 
-	if err != nil || len(sPrefix)+len(tzSuffixLayout) != sLength {
+	if err != nil || len(sPrefix)+len(tzSuffix) != sLength {
 		storeFailure("'"+lps.s+"' could not remove TimeZone with Format "+tzSuffixLayout, lps.conFailStat)
 	}
 	sPrefix = strings.TrimSpace(sPrefix)
@@ -376,17 +381,21 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 }
 
 //ParseStringsDateAndTimeToTimestamp merges date and time strings into a new time
+// only supports following layouts: Date ("2006-01-02", "-07:00") Time ("15:04:05", "-07:00")
+// between the comma sperated layout parts can be spaces, offsets can also be positiv
 func ParseStringsDateAndTimeToTimestamp(dateString string, timeString string, conFailStat *sync.Map) *tspb.Timestamp {
 	dateLPS := LoggedParseString{dateString, conFailStat}
 	timeLPS := LoggedParseString{timeString, conFailStat}
 	newLPS, err := MergeStringDateAndTime(dateLPS, timeLPS)
 	if err != nil {
-		storeFailure("'"+dateString+" "+timeString+"' asMergedTimestamp", conFailStat)
+		storeFailure("'"+dateString+" "+timeString+"' asMergedTimestampString", conFailStat)
 	}
 	return newLPS.ParseStringToTimestamp()
 }
 
-//MergeStringDateAndTime will combine given date string and time string using dates offset omitting times offset
+//MergeStringDateAndTime will combine given date string and time string using dates offset omitting the offset of time
+// only supports following layouts: Date ("2006-01-02", "-07:00") Time ("15:04:05", "-07:00")
+// between the comma sperated layout parts can be spaces, offsets can also be positiv
 func MergeStringDateAndTime(dateLPS LoggedParseString, timeLPS LoggedParseString) (LoggedParseString, error) {
 	var err error
 	newLPS := LoggedParseString{conFailStat: dateLPS.conFailStat}
