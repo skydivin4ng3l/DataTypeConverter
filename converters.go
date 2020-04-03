@@ -1,10 +1,11 @@
-package DataTypeConverter
+package datatypeconverter
 
 import (
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,7 +37,7 @@ func setupLogFile() {
 	})
 }
 
-func storeFailure(unparseable string, conFailStat *sync.Map) {
+func StoreFailure(unparseable string, conFailStat *sync.Map) {
 	counter, ok := conFailStat.Load(unparseable)
 	if ok {
 		conFailStat.Store(unparseable, counter.(int64)+1)
@@ -49,8 +50,8 @@ func storeFailure(unparseable string, conFailStat *sync.Map) {
 func PrintFailStat(conFailStat *sync.Map) {
 	setupLogFile()
 	conFailStat.Range(func(unparseable, counter interface{}) bool {
-		logrus.Infof("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
-		errLog.Printf("Was NOT able to parse: %s  %d times!", unparseable.(string), counter.(int64))
+		logrus.Infof("Was NOT able to parse: %s %d times!", unparseable.(string), counter.(int64))
+		errLog.Printf("Was NOT able to parse: %s %d times!", unparseable.(string), counter.(int64))
 		return true
 	})
 	errLog.Printf("-----> End of logging of last Collection and beginning of new Collection if any")
@@ -69,7 +70,7 @@ func ToBool(s string) bool {
 func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
-		storeFailure("'"+s+"' asFloat64", conFailStat)
+		StoreFailure("'"+s+"' asFloat64", conFailStat)
 		return 0.0
 	}
 	return number
@@ -78,18 +79,30 @@ func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 func ParseStringToDecimal(s string, conFailStat *sync.Map) decimal.Decimal {
 	number, err := decimal.NewFromString(s)
 	if err != nil {
-		storeFailure("'"+s+"' asDecimal", conFailStat)
+		StoreFailure("'"+s+"' asDecimal", conFailStat)
 		return decimal.NewFromInt(0)
 	}
 	return number
 }
 
-func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
+// CheckForError checks the given error and stores a possible failure
+func CheckForError(err error, rawValue interface{}, t reflect.Kind, failStat *sync.Map, fields ...string) {
+	if err != nil {
+		var field string
+		if len(fields) > 0 {
+			field = fmt.Sprintf(`Field %s: `, fields[0])
+		}
+		StoreFailure(fmt.Sprintf(`%sFailed to parse "%s" as %s: %s`, field, rawValue, t.String(), err.Error()), failStat)
+	}
+}
+
+// ParseStringToInt64 parses a string to an int64 and stores any failure
+func ParseStringToInt64(s string, failStat *sync.Map, fields ...string) int64 {
 	number, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
-			storeFailure("'"+s+"' asInt64", conFailStat)
+			CheckForError(err, decimalNumber, reflect.Int64, failStat, fields...)
 			return 0
 		}
 		return decimalNumber.IntPart()
@@ -100,7 +113,7 @@ func ParseStringToInt64(s string, conFailStat *sync.Map) int64 {
 //this is copied form the tmpmodels
 func ToTimestamp(t time.Time) *tspb.Timestamp {
 
-	if (t == time.Time{}){
+	if (t == time.Time{}) {
 		return nil
 	}
 
@@ -139,7 +152,7 @@ func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
 	}
 
 	if err != nil {
-		storeFailure("'"+s+"' could not remove TimeZone with Format -/+00:00", conFailStat)
+		StoreFailure("'"+s+"' could not remove TimeZone with Format -/+00:00", conFailStat)
 	}
 
 	return s_prefix, err
@@ -148,7 +161,7 @@ func stringRemoveTZOffset(s string, conFailStat *sync.Map) (string, error) {
 func ParseStringToDate(s string, conFailStat *sync.Map) *tspb.Timestamp {
 	stringTZFree, err := stringRemoveTZOffset(s, conFailStat)
 	if err != nil {
-		storeFailure("'"+s+"' asDate", conFailStat)
+		StoreFailure("'"+s+"' asDate", conFailStat)
 		return nil
 	}
 	return ToTimestamp(ParseStringToTime(stringTZFree, conFailStat))
@@ -198,6 +211,6 @@ func ParseStringToTime(s string, conFailStat *sync.Map) time.Time {
 			return newTimestamp
 		}
 	}
-	storeFailure("'"+s+"' asTime", conFailStat)
+	StoreFailure("'"+s+"' asTime", conFailStat)
 	return time.Time{}
 }
