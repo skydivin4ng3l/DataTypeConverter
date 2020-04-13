@@ -140,7 +140,9 @@ func (lps LoggedParseString) ParseStringToInt64() int64 {
 
 // ParseStringToInt64 parses a string to an int64 and stores any failure
 func ParseStringToInt64(s string, failStat *sync.Map, fields ...string) int64 {
-	number, err := strconv.ParseInt(strings.Replace(s, " ", "", -1), 10, 64)
+	s = strings.Replace(s, "\n", "", -1) // Remove line breaks
+	s = strings.Replace(s, " ", "", -1)  // Remove any spaces
+	number, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		decimalNumber, err := decimal.NewFromString(s)
 		if err != nil {
