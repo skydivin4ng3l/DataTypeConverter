@@ -104,12 +104,12 @@ func ToBool(s string) bool {
 	return false
 }
 
-// ParseStringToFloat64 prases the string in LoggedParseString as float64 and logs any failures
+// ParseStringToFloat64 parses the string in LoggedParseString as float64 and logs any failures
 func (lps LoggedParseString) ParseStringToFloat64() float64 {
 	return ParseStringToFloat64(lps.S, lps.ConFailStat)
 }
 
-// ParseStringToFloat64 prases the string s as float64 and logs any failures in conFailStat
+// ParseStringToFloat64 parses the string s as float64 and logs any failures in conFailStat
 func ParseStringToFloat64(s string, conFailStat *sync.Map) float64 {
 	number, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
@@ -172,7 +172,7 @@ func (lps LoggedParseString) ParseStringToTimestamp() *tspb.Timestamp {
 	return ParseStringToTimestamp(lps.S, lps.ConFailStat)
 }
 
-// ParseStringToTimestamp pses the string in LoggedParseString as *tspb.Timestamp and logs any failures
+// ParseStringToTimestamp parses the string in LoggedParseString as *tspb.Timestamp and logs any failures
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 
 	return ToTimestamp(ParseStringToTime(s, conFailStat))
