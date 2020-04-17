@@ -63,6 +63,7 @@ var DefaultImportLayouts = []string{
 	"20060102 150405",
 	"20060102 30405",
 	"20060102 304",
+	"2019-04-01T00:00",
 }
 
 //Parser offers interface to parse strings currently only LoggedParseString
