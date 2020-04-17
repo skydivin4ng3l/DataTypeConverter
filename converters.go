@@ -63,7 +63,8 @@ var DefaultImportLayouts = []string{
 	"20060102 150405",
 	"20060102 30405",
 	"20060102 304",
-	"2019-04-01T00:00",
+	"2006-01-02T15:04",
+	"2006-01-02T15:04:00",
 }
 
 //Parser offers interface to parse strings currently only LoggedParseString
@@ -166,12 +167,12 @@ func ToTimestamp(t time.Time) *tspb.Timestamp {
 	return ts
 }
 
-// ParseStringToTimestamp prases the string in LoggedParseString as *tspb.Timestamp and logs any failures
+// ParseStringToTimestamp parses the string in LoggedParseString as *tspb.Timestamp and logs any failures
 func (lps LoggedParseString) ParseStringToTimestamp() *tspb.Timestamp {
 	return ParseStringToTimestamp(lps.S, lps.ConFailStat)
 }
 
-// ParseStringToTimestamp prases the string in LoggedParseString as *tspb.Timestamp and logs any failures
+// ParseStringToTimestamp pses the string in LoggedParseString as *tspb.Timestamp and logs any failures
 func ParseStringToTimestamp(s string, conFailStat *sync.Map) *tspb.Timestamp {
 
 	return ToTimestamp(ParseStringToTime(s, conFailStat))
